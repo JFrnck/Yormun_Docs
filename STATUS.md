@@ -1,6 +1,6 @@
 # STATUS
 
-## Última actualización: 2026-07-19 (America/Lima)
+## Última actualización: 2026-07-20 (America/Lima)
 
 > **Modo solitario:** Claude Code trabaja solo. Antigravity no está corriendo todavía.
 > Claude Code asumirá también las tareas etiquetadas `[ANTIGRAVITY]` en `docs/PROMPTS.md` cuando sean bloqueantes (1.1 y 2.1), dejándolo registrado aquí. Cuando Antigravity se incorpore, retoma el ownership normal de WORKFLOW.md sección 2.
@@ -12,7 +12,7 @@
 - **Repo:** Yormun_Docs
 - **Rama:** `main`
 - **Descripción:** Sesión de arranque. Docs leídos completos (README, ANALISIS, AGENTS, CLAUDE, BLUEPRINT, WORKFLOW, MODEL_ROUTING, PROMPTS). Estado del disco verificado: los 5 repos de app existen con stubs AGENTS.md/CLAUDE.md **sin commitear**; `docs/adr/` y `docs/runbooks/` no existen aún; este STATUS.md estaba vacío.
-- **Estado:** Plan de arranque **aprobado por el owner** (2026-07-19). Paso 0 (higiene de repos) en ejecución. Siguiente: plan detallado de Fase 1.1 para aprobación.
+- **Estado:** Plan de arranque **aprobado por el owner** (2026-07-19). **Paso 0 completado** (2026-07-20): bundle de docs + STATUS commiteados y pusheados; stubs + `.gitignore` commiteados y pusheados en los 5 repos de app; `docs/adr/` y `docs/runbooks/` creados. Siguiente: plan detallado de Fase 1.1 propuesto al owner, esperando aprobación.
 
 ### Antigravity
 
