@@ -9,10 +9,14 @@
 
 ### Claude Code
 
-- **Repo:** Yormun_Docs
-- **Rama:** `main`
-- **Descripción:** Sesión de arranque. Docs leídos completos (README, ANALISIS, AGENTS, CLAUDE, BLUEPRINT, WORKFLOW, MODEL_ROUTING, PROMPTS). Estado del disco verificado: los 5 repos de app existen con stubs AGENTS.md/CLAUDE.md **sin commitear**; `docs/adr/` y `docs/runbooks/` no existen aún; este STATUS.md estaba vacío.
-- **Estado:** Plan de arranque **aprobado por el owner** (2026-07-19). **Paso 0 completado** (2026-07-20): bundle de docs + STATUS commiteados y pusheados; stubs + `.gitignore` commiteados y pusheados en los 5 repos de app; `docs/adr/` y `docs/runbooks/` creados. Siguiente: plan detallado de Fase 1.1 propuesto al owner, esperando aprobación.
+- **Repo:** Yormun_Infra
+- **Rama:** `feature/claude/infra-base`
+- **Descripción:** Fase 1.1 (rol Antigravity asumido por Claude Code en modo solitario, plan detallado aprobado por el owner 2026-07-20): manifests Kustomize base + overlays, scripts de bootstrap, README runbook. Versiones de imágenes verificadas contra Docker Hub/GitHub el 2026-07-20.
+- **Archivos activos:**
+  - `k8s/**`
+  - `scripts/bootstrap/**`
+  - `README.md`, `.github/workflows/**`, `.kube-linter.yaml`
+- **Estado:** En desarrollo activo. No editar estos archivos.
 
 ### Antigravity
 
