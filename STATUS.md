@@ -43,5 +43,6 @@
 
 ## Recientemente completado (últimos 7 días)
 
+- 2026-07-20: [Yormun_Core, Yormun_Executor, Yormun_Web, Yormun_CLI] Fase 2.1 completada (scaffolding base de apps y CI pipelines).
 - 2026-07-19: [Yormun_Docs] Bundle de documentación inicial commiteado (`main`).
 - 2026-07-19: [todos los repos] Repos creados con README inicial; stubs AGENTS.md/CLAUDE.md colocados (pendientes de commit).
