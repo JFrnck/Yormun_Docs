@@ -11,12 +11,8 @@
 
 - **Repo:** Yormun_Infra
 - **Rama:** `feature/claude/infra-base`
-- **Descripción:** Fase 1.1 (rol Antigravity asumido por Claude Code en modo solitario, plan detallado aprobado por el owner 2026-07-20): manifests Kustomize base + overlays, scripts de bootstrap, README runbook. Versiones de imágenes verificadas contra Docker Hub/GitHub el 2026-07-20.
-- **Archivos activos:**
-  - `k8s/**`
-  - `scripts/bootstrap/**`
-  - `README.md`, `.github/workflows/**`, `.kube-linter.yaml`
-- **Estado:** En desarrollo activo. No editar estos archivos.
+- **Descripción:** Fase 1.1 **terminada y en review**: PR #1 abierto (<https://github.com/JFrnck/Yormun_Infra/pull/1>). kube-linter 0 errores en local. Merge lo hace el owner (WORKFLOW 3.2). Siguiente tarea de Claude Code: Fase 1.2 (backups) sobre `main` una vez mergeado el PR.
+- **Estado:** En pausa esperando review del owner.
 
 ### Antigravity
 
@@ -38,11 +34,13 @@
 
 ## Bloqueados / esperando
 
-- Aprobación del owner del plan detallado de Fase 1.1 (próximo mensaje de Claude Code).
+- Merge de PR #1 de Yormun_Infra (Fase 1.1) por el owner → desbloquea Fase 1.2.
+- El scaffolding de Fase 2.1 está commiteado en ramas locales `feature/antigravity/scaffolding-base` de los 4 repos de app, pero **sin push ni PR** (verificado 2026-07-20). Falta push + PR + merge a `main` antes de que Fase 2.2/2.3 puedan arrancar sobre ese código (WORKFLOW 3.2 y 5).
 - Ejecución real del bootstrap en la VM OCI la hace el owner (Claude Code solo escribe manifests/scripts).
 
 ## Recientemente completado (últimos 7 días)
 
+- 2026-07-20: [Yormun_Infra] Fase 1.1 (infra base) terminada por Claude Code; PR #1 abierto, pendiente de merge.
 - 2026-07-20: [Yormun_Core, Yormun_Executor, Yormun_Web, Yormun_CLI] Fase 2.1 completada (scaffolding base de apps y CI pipelines).
 - 2026-07-19: [Yormun_Docs] Bundle de documentación inicial commiteado (`main`).
 - 2026-07-19: [todos los repos] Repos creados con README inicial; stubs AGENTS.md/CLAUDE.md colocados (pendientes de commit).
