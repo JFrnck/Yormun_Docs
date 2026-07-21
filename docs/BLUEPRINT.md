@@ -391,11 +391,12 @@ Son intencionales. Evitan el "apruebo todo por reflejo" cuando estás en el móv
 
 ### 9.5 Audit log inmutable
 
-Tabla `audit_log`:
+Tabla `audit_log` (ver ADR 0002 para el porqué de `request_id`):
 
 ```sql
 CREATE TABLE audit_log (
   id BIGSERIAL PRIMARY KEY,
+  request_id UUID NOT NULL,         -- correlaciona todas las filas de un mismo evento
   timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   actor TEXT NOT NULL,              -- 'system' | 'user' | 'agent:{name}'
   action_type TEXT NOT NULL,        -- 'tool_call' | 'approval' | 'rejection' | 'timeout'
@@ -411,6 +412,8 @@ CREATE TABLE audit_log (
 ```
 
 - `current_hash = sha256(prev_hash || row_data_canonical)`.
+- **Insert-only, siempre.** Una acción con nivel `confirm`/`dual-confirm` genera una fila `pending` al llegar, y una fila NUEVA (nunca un UPDATE de la anterior) cuando se resuelve (`approved`/`rejected`/`timeout`/`abandoned`). `request_id` (mismo UUID en todas las filas del mismo evento) es lo que permite reconstruir el ciclo de vida completo sin romper el hash chain — actualizar una fila histórica invalidaría su hash y el de todas las siguientes (regla de oro #12 / AGENTS.md 5.6).
+- **Estado "pendiente" vive aparte, en la tabla mutable `pending_approvals`** (mismo `request_id` como PK), no en `audit_log`. Se borra o marca resuelta cuando se escribe la fila terminal en el log inmutable. Sobrevive a un restart del pod (persistida, no en memoria) — con 1 réplica y rolling updates, una aprobación en memoria se perdería silenciosamente.
 - Cron diario 04:00 valida la cadena completa. Si detecta corrupción → alerta Telegram + escritura bloqueada hasta intervención manual.
 - Replicación horaria a R2 cifrado.
 
