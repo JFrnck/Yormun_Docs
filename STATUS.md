@@ -2,20 +2,37 @@
 
 ## Última actualización: 2026-07-23 (America/Lima)
 
-> **Modo solitario:** Claude Code trabaja solo. Antigravity no está corriendo todavía.
-> Claude Code asumirá también las tareas etiquetadas `[ANTIGRAVITY]` en `docs/PROMPTS.md` cuando sean bloqueantes (1.1 y 2.1), dejándolo registrado aquí. Cuando Antigravity se incorpore, retoma el ownership normal de WORKFLOW.md sección 2.
+> **Antigravity ya está activo** (ver abajo, Fase 3.1). Retoma ownership normal de `docs/WORKFLOW.md` sección 2 — Claude Code ya no asume tareas `[ANTIGRAVITY]` por defecto, salvo negociación puntual vía esta misma nota.
 
 ## En progreso
 
 ### Claude Code
 
-- **Repo:** ninguno activo ahora mismo.
-- **Descripción:** los 8 PRs de las Fases 1-2 fueron revisados y mergeados a `main` en los 6 repos, y el follow-up de RBAC de NetworkPolicy en Yormun_Infra (ADR 0003 punto 3) también quedó cerrado y mergeado (PR #4). Fin de la Fase 2 del roadmap sin pendientes técnicos.
-- **Próximo:** pendiente de que el owner decida si arranca Fase 3 (Canvas, lidera Antigravity) ahora en modo solitario, o espera a que Antigravity esté disponible.
+- **Repo:** ninguno activo ahora mismo (revisión, no implementación).
+- **Descripción:** revisó el plan de implementación de Antigravity para Fase 3.1 (Canvas) contra `AGENTS.md`/`PROMPTS.md`/blueprint y el código real de `Yormun_Core`. Encontró gaps bloqueantes — ver "Feedback pendiente para Antigravity" abajo. El owner decidió devolver el feedback a Antigravity en vez de que Claude Code implemente los prerequisitos.
+- **Próximo:** a la espera de que Antigravity ajuste el plan.
 
 ### Antigravity
 
-- No activo.
+- **Repo:** Yormun_Core
+- **Rama:** `feature/antigravity/canvas-integration`
+- **Descripción:** Fase 3.1: Integración con Canvas LMS API + Shadowing Académico + Tools.
+- **Archivos activos:**
+  - `src/integrations/canvas/**`
+- **Estado:** Plan de implementación enviado para review; **bloqueado hasta ajustar los puntos de "Feedback pendiente para Antigravity"** abajo antes de escribir código.
+
+## Feedback pendiente para Antigravity — plan Fase 3.1 (Canvas), enviado 2026-07-23
+
+Claude Code revisó el plan propuesto (Canvas client + tools + shadowing cron) contra `AGENTS.md`, `docs/PROMPTS.md` §3.1, las golden rules de `docs/BLUEPRINT.md` §15 y el estado real del código en `Yormun_Core`. Ajustar antes de implementar:
+
+1. **Sanitizador de injection incorrecto.** El plan propone un `canvas-sanitizer.ts` propio con tag genérico `<untrusted_content>`. `AGENTS.md` §5.1 (golden rule #6) exige una función **compartida** `wrapUntrustedContent(content, source, sessionNonce)` en `src/security/injection-sanitizer.ts`, con tag `<untrusted_content_{sessionNonce}>` (nonce por sesión + escape HTML) y `generateSessionNonce()`. Ese módulo **no existe todavía** (`src/security/` solo tiene `.gitkeep`). Además `Yormun_Docs/CLAUDE.md` §3 asigna `src/security/**` a Claude Code, no a Antigravity — coordinar antes de tocarlo, no reimplementar una versión propia y más débil dentro de `integrations/canvas/`.
+2. **Falta la infraestructura de model routing.** `PROMPTS.md` §3.1 exige usar Gemini 3.1 Pro para el resumen del shadowing; golden rule #5 prohíbe modelos hardcoded — todo debe pasar por `model-provider/router.ts` + `config/models.yaml` (ver `docs/MODEL_ROUTING.md`). Verificado: `src/model-provider/` solo tiene `.gitkeep`, no existe `config/models.yaml`, no hay SDK de LLM instalado en `package.json`. El plan no menciona cómo se generaría el resumen — esto es un prerequisito real, no un detalle menor.
+3. **Referencia rota en AGENTS.md §5.1:** cita "ver ADR 0002" para el diseño nonce del sanitizador, pero ADR 0002 es sobre `audit_log`/`request_id` (colisión de numeración heredada del bundle de docs original, antes de que existiera ningún ADR). Cuando se construya el sanitizador, escribir el ADR real (sería el 0004).
+4. **Confirmar con el owner** URL de Canvas, token y curso de prueba antes de escribir código (paso explícito de `PROMPTS.md` §3.1, punto 3) — no asumir env vars sin esa conversación.
+5. **`canvasScheduleStudyBlock` depende de Google Calendar, que no existe.** No hay módulo de Calendar en el repo. Ya existe un tool stub `createCalendarEvent` (Fase 2.2, sin implementación real) en `src/tools/registry.ts` — aclarar si `canvasScheduleStudyBlock` lo reusa o si son dos tools distintos, y en cualquier caso stubear la dependencia honestamente (patrón `ModalService` 501 de Yormun_Executor) en vez de una implementación parcial silenciosa.
+6. **`CANVAS_BASE_URL`/`CANVAS_API_TOKEN` no deberían ser opcionales.** `AGENTS.md` línea 371 exige fail-fast si falta una variable requerida. Marcarlas opcionales permite que el módulo de Canvas quede a medias en silencio — siendo Fase 3 específicamente para habilitar Canvas, deberían ser requeridas.
+
+Lo que el plan sí acierta: los 3 niveles HITL coinciden con blueprint/PROMPTS, el rate limit de 30 req/min es correcto, mockear el API de Canvas en tests es válido (`AGENTS.md` §6.3 permite mocks de APIs externas), y `external_inputs_summary` ya existe en el schema de `audit_log` — no hace falta migración ahí.
 
 ## Pull Requests — todos mergeados a `main`
 
