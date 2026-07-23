@@ -15,9 +15,22 @@
 ### Antigravity
 
 - **Repo:** Yormun_Core
-- **Rama:** `feature/antigravity/telegram-bot` (a crear)
-- **Descripción:** Fase 2.4 — **Tarea B únicamente: bot de Telegram** (`src/telegram/`). La Tarea A de 2.4 (`src/model-provider/**`, ver `docs/PROMPTS.md` §2.4) ya quedó construida de rebote como prerequisito de Fase 3.1 (PR #3, mergeado) — no reconstruirla.
-- **Estado:** 🔵 **Siguiente tarea, arrancando.** El owner eligió priorizar el bot de Telegram (Fase 2.4) antes que Fase 4.1/4.2/4.3 — sin él, el sistema HITL ya construido (4 niveles, dual-confirm, timeout) no tiene ningún canal real de notificación/aprobación. `timeout.service.ts` hoy solo loguea un warning ("notificación real llega en Fase 2.4") en vez de notificar de verdad.
+- **Rama:** `feature/antigravity/telegram-bot`
+- **Descripción:** Fase 2.4: Bot de Telegram (`src/telegram/`).
+- **Archivos activos:**
+  - `src/telegram/**`
+  - `src/config/env.schema.ts`
+  - `src/app.module.ts`
+- **Estado:** ⚠️ **Bloqueado — ver "Feedback Fase 2.4" abajo.** Plan bien encaminado, con 1 bug real que dejaría al owner bloqueado del propio bot en silencio.
+
+## Feedback Fase 2.4 (Telegram) para Antigravity, enviado 2026-07-23
+
+1. **Bug real — `chat.id` es `number`, `TELEGRAM_OWNER_CHAT_ID` no puede validarse como `z.string()`.** En grammY, `ctx.chat.id` es `number`. Comparar `ctx.chat.id === TELEGRAM_OWNER_CHAT_ID` con el env var tipado como string da `false` siempre (`number === string`) — bloquearía al owner de su propio bot en silencio. Usar el mismo idioma que `PORT` en `env.schema.ts`: `TELEGRAM_OWNER_CHAT_ID: z.coerce.number().int()`, comparar como número directo.
+2. **`/budget` no tiene nada real que reportar — Budget guard (Fase 4.1) no existe todavía.** `src/budget/**` no está construido. `/budget` debe ser un stub honesto ("Budget guard todavía no está implementado, llega en Fase 4.1"), no un número fabricado — mismo patrón que `CalendarNotImplementedError`.
+
+Menor: aclarar quién registra el webhook con Telegram (`bot.api.setWebhook(url)`) — `main.ts` al arrancar, o paso manual del owner.
+
+Lo que el plan sí acierta: consumo correcto de `DualConfirmService`/`AuditService`/`ModelRouterService` sin reimplementarlos, `SELECT` directo sobre `pendingApprovals` en vez de tocar `src/hitl/**`, auth por chat_id whitelisted, webhook vía controller NestJS, env vars fail-fast, tests con grammY mockeado.
 
 ## Fase 3.1 (completada, referencia)
 
