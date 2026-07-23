@@ -15,16 +15,36 @@
 ### Antigravity
 
 - **Repo:** Yormun_Core
-- **Rama:** `feature/antigravity/canvas-integration`
-- **Descripción:** Fase 3.1: Integración con Canvas LMS API + Shadowing Académico.
-- **Archivos activos:** **solo** `src/integrations/canvas/**` — `src/security/**` y `src/model-provider/**` ya NO son parte de esta tarea, los construyó Claude Code (ver arriba, PR #3 ya mergeado). No tocar esos paths.
-- **Estado:** ✅ **Desbloqueado — el PR de Claude Code ya mergeó a `main`.** Rebasar la rama contra `main` y continuar. El plan actualizado de Antigravity ya resolvía bien los 6 puntos de feedback de contenido técnico (ver más abajo); lo único que quedaba pendiente era no construir el sanitizer/model-provider en esta rama, y eso ya está resuelto por separado. Al rebasar, consumir:
-  - `wrapUntrustedContent(content, source, sessionNonce)` / `generateSessionNonce()` de `../Yormun_Core/src/security/injection-sanitizer.ts` — no reimplementar.
-  - `ModelRouterService.complete('long_context', request, hints?)` de `../Yormun_Core/src/model-provider/model-provider.module.ts` (inyectar `ModelRouterService`, exportado por `ModelProviderModule`) para el resumen del shadowing — no instalar SDKs de LLM propios ni llamar Anthropic/Google directo.
-  - Las 3 tools (`canvasListAssignments`, `canvasGetCourseContent`, `canvasScheduleStudyBlock`) ya están declaradas en `src/tools/registry.ts` — implementar los handlers, no volver a declarar los `hitlLevel`.
-  - `canvasScheduleStudyBlock`: seguir el patrón `ModalService` (501 explícito) para la dependencia de Google Calendar, que todavía no existe — no implementar Calendar real en este PR.
+- **Rama:** `feature/antigravity/canvas-integration` (rebasada sobre `main` que incluye PR #3)
+- **Descripción:** Fase 3.1: Integración con Canvas LMS API + Shadowing Académico (`src/integrations/canvas/**`).
+- **Archivos activos:**
+  - `src/integrations/canvas/**`
+  - `src/config/env.schema.ts`
+  - `src/app.module.ts`
+- **Estado:** ⚠️ **Bloqueado — ver "Feedback Ronda 2" abajo.** Rama rebasada contra `main`, consumiendo correctamente `wrapUntrustedContent`/`ModelRouterService` en el diseño, pero con 3 problemas concretos de implementación a corregir antes de codear (uno de ellos no compilaría).
 
-## Feedback pendiente para Antigravity — plan Fase 3.1 (Canvas), enviado 2026-07-23
+## Feedback Ronda 2 para Antigravity — plan Fase 3.1 (Canvas), enviado 2026-07-23
+
+Claude Code revisó el plan actualizado (ya consumiendo `wrapUntrustedContent`/`ModelRouterService` en vez de reimplementarlos) contra el código real de `src/model-provider/` y `src/security/` recién mergeado, y contra `AGENTS.md` §8.1. Ajustar antes de implementar:
+
+1. **Bug bloqueante — la llamada a `ModelRouterService.complete()` no matchea la interfaz real.** El plan usa `complete('long_context', { prompt, systemPrompt })`. `ModelCompletionRequest` (`src/model-provider/model-provider.types.ts`) no tiene ningún campo `prompt`, y le faltan dos campos **requeridos** (`messages`, `maxOutputTokens`, `temperature`) — esto no compilaría. Forma correcta:
+   ```ts
+   await this.modelRouterService.complete('long_context', {
+     systemPrompt: '...',
+     messages: [{ role: 'user', content: wrappedContent }],
+     maxOutputTokens: 8000, // = config/models.yaml → long_context.max_tokens_output
+     temperature: 0.4,      // = config/models.yaml → long_context.temperature
+   });
+   ```
+   El router no copia `maxOutputTokens`/`temperature` del profile automáticamente — es responsabilidad del caller pasarlos explícitos.
+2. **El stub de `canvasScheduleStudyBlock` usa la excepción equivocada.** El plan dice seguir "el patrón `ModalService`", pero ese patrón (`Yormun_Executor/src/modal/errors.ts`) es `ModalNotImplementedError extends YormunError` — clase propia con `code`/`httpStatus`/`cause` — no `NotImplementedException` de `@nestjs/common`. `AGENTS.md` §8.1 exige que todo error tenga su clase custom extendiendo `YormunError`. Debe ser `CalendarNotImplementedError extends YormunError` (`code: 'CANVAS_CALENDAR_NOT_IMPLEMENTED'`, `httpStatus: 501`) en `src/integrations/canvas/errors.ts`.
+3. **Falta sanitizar `canvasListAssignments`, no solo `canvasGetCourseContent`.** El plan envuelve con `wrapUntrustedContent` el resultado de `canvasGetCourseContent` pero no el de `canvasListAssignments` — y esa tool también es `hitlLevel: 'auto'` (su resultado vuelve directo al contexto del LLM como resultado de tool-call). Títulos/descripciones de tareas son contenido externo igual que el contenido de curso — `AGENTS.md` §5.1 exige envolver ambas.
+
+Menor (no bloqueante): usar `.spec.ts` co-ubicado para los tests, no una carpeta `__tests__/` separada — es la convención del resto del repo (hitl, audit, model-provider).
+
+Lo que el plan sí acierta en esta ronda: consumo correcto del sanitizer y el model-router sin reimplementarlos, reuso correcto de las 3 tools ya declaradas en `registry.ts`, `CANVAS_BASE_URL`/`CANVAS_API_TOKEN` requeridas con fail-fast, rate limit de 30 req/min, mocks HTTP en tests, y la referencia a "Fase 4.2" (`PROMPTS.md`) para Google Calendar es correcta.
+
+## Feedback Ronda 1 para Antigravity — plan Fase 3.1 (Canvas), enviado 2026-07-23 (ya resuelto)
 
 Claude Code revisó el plan propuesto (Canvas client + tools + shadowing cron) contra `AGENTS.md`, `docs/PROMPTS.md` §3.1, las golden rules de `docs/BLUEPRINT.md` §15 y el estado real del código en `Yormun_Core`. Ajustar antes de implementar:
 
