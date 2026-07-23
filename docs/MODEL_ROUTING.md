@@ -256,7 +256,9 @@ zod: {version}
 
 Consulta Context7 MCP con IDs de versión específicos cuando necesites documentación. Si Context7 no tiene información para una versión exacta, avisa explícitamente y no inventes. No uses APIs de versiones anteriores aunque las conozcas; asumí que hubo cambios.
 
-### Razón (ver ADR 0002)
+### Razón (pendiente de ADR — ver STATUS.md)
+
+> Nota: esta sección citaba "ver ADR 0002" en el bundle de docs original, antes de que existiera ningún ADR — colisión de numeración con `docs/adr/0002-audit-log-request-id.md`, que trata un tema no relacionado. `versions.ts` y este mecanismo de anti-alucinación todavía no están implementados (quedaron fuera de alcance de Fase 3.1 porque solo aplican a tareas de código, y Canvas/shadowing usa el profile `long_context`, no uno de código) — se escribirá el ADR real cuando se construyan.
 
 Entre versiones menores de frameworks recientes hubo cambios sutiles de API que los LLMs actuales pueden no conocer bien. Anclar el prompt a versiones exactas + forzar al LLM a consultar Context7 con esas versiones reduce alucinaciones sutiles del tipo "método que existía en v11.0 pero se renombró en v11.1".
 
