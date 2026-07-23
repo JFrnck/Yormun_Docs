@@ -9,15 +9,14 @@
 ### Claude Code
 
 - **Repo:** ninguno activo ahora mismo.
-- **Descripción:** construyó los prerequisitos de Fase 3.1 que el owner decidió que le correspondían (`src/security/injection-sanitizer.ts` y `src/model-provider/**`, área exclusiva de Claude Code por `WORKFLOW.md` §2.2), en vez de que Antigravity los construyera dentro de su propia rama de Canvas. [PR #3](https://github.com/JFrnck/Yormun_Core/pull/3) **mergeado a `main`**. Implementado: `wrapUntrustedContent`/`generateSessionNonce` (nonce de 16 hex + escape HTML, ADR 0004), `ModelRouterService.complete(taskProfile, request, hints?)` con selector + failover cross-vendor (Anthropic/Google), `config/models.yaml` con los 8 TaskProfiles. Declaró también las 3 tools de Canvas en `src/tools/registry.ts` (sin implementar el handler). 87 tests unitarios, cobertura del módulo nuevo 97%. Corrigió las 2 referencias rotas a "ADR 0002" en `AGENTS.md`/`MODEL_ROUTING.md` que motivaron ADR 0004. Fix incidental: el CI de Core no tenía `ANTHROPIC_API_KEY`/`GEMINI_API_KEY` fake — agregado (mismo patrón que `DATABASE_URL`).
-- **Próximo:** ninguno pendiente de este lado — a la espera de que Antigravity retome Canvas.
+- **Descripción:** construyó los prerequisitos de Fase 3.1 ([PR #3](https://github.com/JFrnck/Yormun_Core/pull/3), mergeado) y revisó/verificó de forma independiente (no solo confiando en el self-report) el PR de Antigravity ([PR #4](https://github.com/JFrnck/Yormun_Core/pull/4), **mergeado**) antes de mergearlo: `pnpm lint`/`test`/`build`/`tsc --noEmit` corridos a mano sobre la rama, confirmó que los 3 puntos de la Ronda 2 quedaron bien resueltos y que `registry.ts` no fue tocado.
+- **Próximo:** ninguno pendiente — **Fase 3.1 completa y mergeada a `main`.**
 
 ### Antigravity
 
-- **Repo:** Yormun_Core
-- **Rama:** `feature/antigravity/canvas-integration`
-- **Descripción:** Fase 3.1: Integración con Canvas LMS API + Shadowing Académico (`src/integrations/canvas/**`).
-- **Estado:** ✅ **Completado y commiteado.** 8 tests unitarios pasando, 95 tests totales en verde, 0 errores de lint. Pendiente de push / PR a `main` por el owner. Handoff: `canvasScheduleStudyBlock` devuelve `CalendarNotImplementedError` (501) a la espera de Google Calendar (Fase 4.2).
+- **Repo:** ninguno activo ahora mismo.
+- **Descripción:** Fase 3.1 completada — `src/integrations/canvas/**` mergeado en PR #4. `CanvasClientService` (rate limit 30 req/min), `CanvasToolsService` (3 tools, ambas `auto` sanitizando con `wrapUntrustedContent`), `ShadowingService` (cron nocturno vía `ModelRouterService.complete('long_context', ...)`).
+- **Estado:** ✅ **Mergeado a `main`.** Handoff: `canvasScheduleStudyBlock` lanza `CalendarNotImplementedError` (501) a la espera de Google Calendar (Fase 4.2) — próxima tarea natural de Antigravity cuando el owner lo indique.
 
 ## Feedback Ronda 2 para Antigravity — plan Fase 3.1 (Canvas), enviado 2026-07-23
 
@@ -67,6 +66,7 @@ Lo que el plan sí acierta: los 3 niveles HITL coinciden con blueprint/PROMPTS, 
 | Yormun_CLI | [#1](https://github.com/JFrnck/Yormun_CLI/pull/1) | Fase 2.1: scaffolding Ink | ✅ mergeado |
 | Yormun_Infra | [#4](https://github.com/JFrnck/Yormun_Infra/pull/4) | RBAC del ServiceAccount de yormun-executor (ADR 0003 punto 3, follow-up de Fase 2.3) | ✅ mergeado |
 | Yormun_Core | [#3](https://github.com/JFrnck/Yormun_Core/pull/3) | Prerequisitos Fase 3.1: injection-sanitizer + model-provider (ADR 0004) | ✅ mergeado |
+| Yormun_Core | [#4](https://github.com/JFrnck/Yormun_Core/pull/4) | Fase 3.1: integración Canvas LMS + Shadowing Académico | ✅ mergeado |
 
 **Nota — Yormun_Infra #2 se reemplazó por #3:** al mergear #1 con `--delete-branch`, GitHub cerró automáticamente #2 porque su rama base (`feature/claude/infra-base`, la de #1) dejó de existir — efecto colateral no documentado de GitHub en PRs apilados, no una acción intencional. Un PR cerrado así no se puede reabrir ni re-apuntar vía API una vez cerrado. Recuperado abriendo #3 desde la misma rama head (`feature/claude/infra-backups`, intacta) directo contra `main`; contenido idéntico (26 archivos, 1128 inserciones), CI verde, mergeado normalmente.
 
@@ -144,7 +144,7 @@ También corregido de paso: glob patterns rotos en `lint`/`format`, y `package.j
 
 ## Recientemente completado (últimos 7 días)
 
-- 2026-07-23: [Yormun_Core] Fase 3.1 completada por Antigravity (integración Canvas LMS, cliente REST con rate limit de 30 req/min, handlers sanitizados con `wrapUntrustedContent`, ShadowingService nocturno consumiendo `ModelRouterService.complete('long_context', ...)` con Gemini 3.1 Pro, `CalendarNotImplementedError` 501). 95 tests en verde en Yormun_Core.
+- 2026-07-23: [Yormun_Core] [PR #4](https://github.com/JFrnck/Yormun_Core/pull/4) mergeado — Fase 3.1 completada por Antigravity (integración Canvas LMS, cliente REST con rate limit de 30 req/min, handlers sanitizados con `wrapUntrustedContent`, ShadowingService nocturno consumiendo `ModelRouterService.complete('long_context', ...)` con Gemini 3.1 Pro, `CalendarNotImplementedError` 501). 95 tests en verde. Claude Code verificó de forma independiente (lint/test/build/typecheck a mano, no solo el self-report) antes de mergear — sin hallazgos nuevos.
 - 2026-07-23: [Yormun_Core] PR #3 mergeado — prerequisitos de Fase 3.1: `src/security/injection-sanitizer.ts` (ADR 0004) + `src/model-provider/**` (router, failover, providers Anthropic/Google, config/models.yaml) + declaración de las 3 tools de Canvas en `registry.ts`. 87 tests, cobertura 97% en los módulos nuevos. Fix incidental de CI (env vars faltantes). Antigravity desbloqueado para retomar `integrations/canvas/**`.
 - 2026-07-23: [Yormun_Infra] PR #4 mergeado — RBAC de NetworkPolicy para el ServiceAccount del Executor (ADR 0003 punto 3), cerrando el último follow-up técnico de la Fase 2.
 - 2026-07-23: Review y merge de los 8 PRs de las Fases 1-2 en los 6 repos. Incidente: Yormun_Infra #2 auto-cerrado por GitHub al borrar la rama base de un PR apilado; recuperado como #3. Procedimiento corregido aplicado sin incidentes en Core y Executor. Todos los repos en `main` limpio, 0 PRs abiertos.
