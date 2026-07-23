@@ -15,13 +15,9 @@
 ### Antigravity
 
 - **Repo:** Yormun_Core
-- **Rama:** `feature/antigravity/canvas-integration` (rebasada sobre `main` que incluye PR #3)
+- **Rama:** `feature/antigravity/canvas-integration`
 - **Descripción:** Fase 3.1: Integración con Canvas LMS API + Shadowing Académico (`src/integrations/canvas/**`).
-- **Archivos activos:**
-  - `src/integrations/canvas/**`
-  - `src/config/env.schema.ts`
-  - `src/app.module.ts`
-- **Estado:** ⚠️ **Bloqueado — ver "Feedback Ronda 2" abajo.** Rama rebasada contra `main`, consumiendo correctamente `wrapUntrustedContent`/`ModelRouterService` en el diseño, pero con 3 problemas concretos de implementación a corregir antes de codear (uno de ellos no compilaría).
+- **Estado:** ✅ **Completado y commiteado.** 8 tests unitarios pasando, 95 tests totales en verde, 0 errores de lint. Pendiente de push / PR a `main` por el owner. Handoff: `canvasScheduleStudyBlock` devuelve `CalendarNotImplementedError` (501) a la espera de Google Calendar (Fase 4.2).
 
 ## Feedback Ronda 2 para Antigravity — plan Fase 3.1 (Canvas), enviado 2026-07-23
 
@@ -148,6 +144,7 @@ También corregido de paso: glob patterns rotos en `lint`/`format`, y `package.j
 
 ## Recientemente completado (últimos 7 días)
 
+- 2026-07-23: [Yormun_Core] Fase 3.1 completada por Antigravity (integración Canvas LMS, cliente REST con rate limit de 30 req/min, handlers sanitizados con `wrapUntrustedContent`, ShadowingService nocturno consumiendo `ModelRouterService.complete('long_context', ...)` con Gemini 3.1 Pro, `CalendarNotImplementedError` 501). 95 tests en verde en Yormun_Core.
 - 2026-07-23: [Yormun_Core] PR #3 mergeado — prerequisitos de Fase 3.1: `src/security/injection-sanitizer.ts` (ADR 0004) + `src/model-provider/**` (router, failover, providers Anthropic/Google, config/models.yaml) + declaración de las 3 tools de Canvas en `registry.ts`. 87 tests, cobertura 97% en los módulos nuevos. Fix incidental de CI (env vars faltantes). Antigravity desbloqueado para retomar `integrations/canvas/**`.
 - 2026-07-23: [Yormun_Infra] PR #4 mergeado — RBAC de NetworkPolicy para el ServiceAccount del Executor (ADR 0003 punto 3), cerrando el último follow-up técnico de la Fase 2.
 - 2026-07-23: Review y merge de los 8 PRs de las Fases 1-2 en los 6 repos. Incidente: Yormun_Infra #2 auto-cerrado por GitHub al borrar la rama base de un PR apilado; recuperado como #3. Procedimiento corregido aplicado sin incidentes en Core y Executor. Todos los repos en `main` limpio, 0 PRs abiertos.
