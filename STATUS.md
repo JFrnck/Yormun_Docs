@@ -14,9 +14,14 @@
 
 ### Antigravity
 
-- **Repo:** ninguno activo ahora mismo.
-- **Descripción:** Fase 3.1 completada — `src/integrations/canvas/**` mergeado en PR #4. `CanvasClientService` (rate limit 30 req/min), `CanvasToolsService` (3 tools, ambas `auto` sanitizando con `wrapUntrustedContent`), `ShadowingService` (cron nocturno vía `ModelRouterService.complete('long_context', ...)`).
-- **Estado:** ✅ **Mergeado a `main`.** Handoff: `canvasScheduleStudyBlock` lanza `CalendarNotImplementedError` (501) a la espera de Google Calendar (Fase 4.2) — próxima tarea natural de Antigravity cuando el owner lo indique.
+- **Repo:** Yormun_Core
+- **Rama:** `feature/antigravity/telegram-bot` (a crear)
+- **Descripción:** Fase 2.4 — **Tarea B únicamente: bot de Telegram** (`src/telegram/`). La Tarea A de 2.4 (`src/model-provider/**`, ver `docs/PROMPTS.md` §2.4) ya quedó construida de rebote como prerequisito de Fase 3.1 (PR #3, mergeado) — no reconstruirla.
+- **Estado:** 🔵 **Siguiente tarea, arrancando.** El owner eligió priorizar el bot de Telegram (Fase 2.4) antes que Fase 4.1/4.2/4.3 — sin él, el sistema HITL ya construido (4 niveles, dual-confirm, timeout) no tiene ningún canal real de notificación/aprobación. `timeout.service.ts` hoy solo loguea un warning ("notificación real llega en Fase 2.4") en vez de notificar de verdad.
+
+## Fase 3.1 (completada, referencia)
+
+`src/integrations/canvas/**` mergeado en PR #4. `CanvasClientService` (rate limit 30 req/min), `CanvasToolsService` (3 tools, ambas `auto` sanitizando con `wrapUntrustedContent`), `ShadowingService` (cron nocturno vía `ModelRouterService.complete('long_context', ...)`). Handoff pendiente: `canvasScheduleStudyBlock` lanza `CalendarNotImplementedError` (501) a la espera de Google Calendar (Fase 4.2).
 
 ## Feedback Ronda 2 para Antigravity — plan Fase 3.1 (Canvas), enviado 2026-07-23
 
@@ -85,6 +90,7 @@ Los `"name": "temp-*"` de `package.json` en Web y CLI ya no aplican como pendien
 - **2026-07-22 — ADR 0003 (Executor: separación + hallazgo `deno eval`)** escrito e implementado en Yormun_Executor PR #2.
 - **2026-07-23 — Canvas LMS: single-tenant confirmado, sin soporte multi-usuario.** El owner preguntó si Canvas soportaría "cambiar de usuario" (cuentas de terceros); se le presentaron 3 opciones (single-tenant / multi-cuenta propia / multi-tenant real) y confirmó mantener single-tenant, consistente con BLUEPRINT §1-2 ("plataforma personal", no multi-región/HA). Un solo Personal Access Token de Canvas (del owner) → Infisical → REST API, como ya especifica §7.1. **No implementar** `user_id` en `audit_log`/`pending_approvals`, aislamiento de memory por usuario, ni enrutamiento HITL multi-persona — si en el futuro se reconsidera, requiere un ADR nuevo porque cambia el modelo de seguridad completo del proyecto.
 - **2026-07-23 — Prerequisitos de Fase 3.1 (sanitizer + model-provider): los construye Claude Code, no Antigravity.** El plan de Antigravity para Canvas proponía construir `src/security/injection-sanitizer.ts` y `src/model-provider/**` dentro de su propia rama — ambos son área exclusiva de Claude Code por `WORKFLOW.md` §2.2 (infraestructura compartida que futuras integraciones como Gmail/Telegram también necesitarán). El owner confirmó que Claude Code los construyera aparte primero; Antigravity los consume una vez mergeados. Ver PR #3 de Yormun_Core y ADR 0004.
+- **2026-07-23 — Después de Fase 3.1, siguiente prioridad: terminar Fase 2.4 (bot de Telegram), no Fase 4.x.** La Tarea A de Fase 2.4 (`model-provider`) ya quedó hecha de rebote en PR #3. Queda solo la Tarea B (`src/telegram/`, grammY). El owner la priorizó sobre Budget guard (4.1)/Google Calendar (4.2)/Memoria (4.3) porque el sistema HITL ya construido no tiene todavía ningún canal real de notificación/aprobación.
 
 ## Plan aprobado
 
