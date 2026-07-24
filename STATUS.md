@@ -17,7 +17,8 @@
 - **Repo:** Yormun_Core
 - **Rama:** `feature/antigravity/telegram-bot`
 - **Descripción:** Fase 2.4: Bot de Telegram (`src/telegram/`).
-- **Estado:** ✅ **Completado, verificado y commiteado.** 105 tests pasando, 0 errores de lint, 0 errores de `tsc --noEmit`, `TELEGRAM_WEBHOOK_SECRET` requerida fail-fast (sin bypass opcional), `bot.init()` dinámico. Pendiente de push / PR a `main` por el owner.
+- **Estado:** 🚀 **PR [#5](https://github.com/JFrnck/Yormun_Core/pull/5) abierto.** Push completado a `origin`, CI ejecutándose. 105 tests pasando, 0 lint, 0 typecheck.
+
 
 ## Feedback Ronda 3 (Telegram) para Antigravity, enviado 2026-07-23
 
@@ -99,6 +100,7 @@ Lo que el plan sí acierta: los 3 niveles HITL coinciden con blueprint/PROMPTS, 
 | Yormun_Infra | [#4](https://github.com/JFrnck/Yormun_Infra/pull/4) | RBAC del ServiceAccount de yormun-executor (ADR 0003 punto 3, follow-up de Fase 2.3) | ✅ mergeado |
 | Yormun_Core | [#3](https://github.com/JFrnck/Yormun_Core/pull/3) | Prerequisitos Fase 3.1: injection-sanitizer + model-provider (ADR 0004) | ✅ mergeado |
 | Yormun_Core | [#4](https://github.com/JFrnck/Yormun_Core/pull/4) | Fase 3.1: integración Canvas LMS + Shadowing Académico | ✅ mergeado |
+| Yormun_Core | [#5](https://github.com/JFrnck/Yormun_Core/pull/5) | Fase 2.4: bot de Telegram (grammY + webhook + auth + secret_token) | ⏳ abierto |
 
 **Nota — Yormun_Infra #2 se reemplazó por #3:** al mergear #1 con `--delete-branch`, GitHub cerró automáticamente #2 porque su rama base (`feature/claude/infra-base`, la de #1) dejó de existir — efecto colateral no documentado de GitHub en PRs apilados, no una acción intencional. Un PR cerrado así no se puede reabrir ni re-apuntar vía API una vez cerrado. Recuperado abriendo #3 desde la misma rama head (`feature/claude/infra-backups`, intacta) directo contra `main`; contenido idéntico (26 archivos, 1128 inserciones), CI verde, mergeado normalmente.
 
