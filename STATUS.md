@@ -17,9 +17,19 @@
 - **Repo:** Yormun_Core
 - **Rama:** `feature/antigravity/telegram-bot`
 - **Descripción:** Fase 2.4: Bot de Telegram (`src/telegram/`).
-- **Estado:** ✅ **Completado y commiteado.** 8 tests unitarios del bot y webhook en verde, 103 tests totales pasando en `Yormun_Core`, 0 errores de lint, OpenAPI spec actualizado. Pendiente de push / PR a `main` por el owner.
+- **Estado:** ⚠️ **Bloqueado — ver "Feedback Ronda 2" abajo.** El plan (Ronda 1) quedó bien corregido, pero la implementación real tiene un gap de seguridad en el webhook y errores de tipos que `pnpm test`/`pnpm build` no detectan.
 
-## Feedback Fase 2.4 (Telegram) para Antigravity, enviado 2026-07-23
+## Feedback Ronda 2 (Telegram) para Antigravity, enviado 2026-07-23
+
+Claude Code revisó el código real de la rama (no solo el self-report), corriendo `pnpm lint`/`test`/`build` de forma independiente + `npx tsc --noEmit -p tsconfig.json` sobre todo el proyecto (`nest build` usa `tsconfig.build.json`, que excluye specs — por eso esto no se ve en `pnpm build`). 3 puntos:
+
+1. **Gap de seguridad — el webhook no valida que la petición venga de Telegram.** `TelegramWebhookController` procesa cualquier POST a `/telegram/webhook`. La única barrera es `chat.id === ownerChatId` **dentro** del payload — pero el endpoint es público, así que cualquiera que sepa/adivine el chat_id del owner podría forjar un Update y el bot lo procesaría como si fuera él. Es el único canal real de aprobación del sistema HITL — hay que cerrarlo con `secret_token` en `setWebhook(url, { secret_token })` + validar el header `X-Telegram-Bot-Api-Secret-Token` en el controller antes de procesar (401 si no matchea).
+2. **Errores de tipos reales en los specs, invisibles para `pnpm test`/`pnpm build`.** `nest build` excluye `**/*spec.ts` vía `tsconfig.build.json`, y `vitest` transpila con SWC sin type-check. `npx tsc --noEmit -p tsconfig.json` encontró: el `chat` fake en 3 tests le falta `first_name` (requerido por `PrivateChat`), `cmd` posiblemente `undefined` en `text.split(' ')[0]` (`noUncheckedIndexedAccess: true`), el transformer de `mockSendMessage` no matchea el tipo `ApiResponse` de grammY, y el `Update` fake del controller-spec le faltan `message_id`/`date`/`chat`. Ninguno rompe en runtime, pero violan el `strict: true` del repo — correr `tsc --noEmit` antes de dar un PR por cerrado.
+3. **Menor — `botInfo` hardcodeado en el constructor de producción.** `new Bot(token, { botInfo: {...} })` en `TelegramBotService` (no solo en tests) evita que el bot valide el token real contra Telegram al arrancar (sin fail-fast) y deja `bot.botInfo`/`ctx.me` con una identidad falsa para siempre. Sacarlo, llamar `await this.bot.init()` real en `onModuleInit()`, y en tests hacer que el transformer también responda a `getMe`.
+
+Lo que sí está sólido: `TELEGRAM_OWNER_CHAT_ID` como número (bien corregido en Ronda 1), `/budget` con stub honesto, consumo correcto de `DualConfirmService`/`AuditService`/`ModelRouterService`, `SELECT` directo sobre `pendingApprovals` sin tocar `src/hitl/**`, wiring de módulos correcto.
+
+## Feedback Ronda 1 (Telegram) para Antigravity, enviado 2026-07-23 (ya resuelto)
 
 1. **Bug real — `chat.id` es `number`, `TELEGRAM_OWNER_CHAT_ID` no puede validarse como `z.string()`.** En grammY, `ctx.chat.id` es `number`. Comparar `ctx.chat.id === TELEGRAM_OWNER_CHAT_ID` con el env var tipado como string da `false` siempre (`number === string`) — bloquearía al owner de su propio bot en silencio. Usar el mismo idioma que `PORT` en `env.schema.ts`: `TELEGRAM_OWNER_CHAT_ID: z.coerce.number().int()`, comparar como número directo.
 2. **`/budget` no tiene nada real que reportar — Budget guard (Fase 4.1) no existe todavía.** `src/budget/**` no está construido. `/budget` debe ser un stub honesto ("Budget guard todavía no está implementado, llega en Fase 4.1"), no un número fabricado — mismo patrón que `CalendarNotImplementedError`.
