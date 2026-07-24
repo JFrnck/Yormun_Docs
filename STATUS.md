@@ -1,25 +1,23 @@
 # STATUS
 
-## Última actualización: 2026-07-24 (America/Lima) — actualización 2
+## Última actualización: 2026-07-24 (America/Lima) — actualización 3
 
-> **Antigravity ya está activo** (ver abajo, Fase 3.1/2.4). Retoma ownership normal de `docs/WORKFLOW.md` sección 2 — Claude Code ya no asume tareas `[ANTIGRAVITY]` por defecto, salvo negociación puntual vía esta misma nota.
+> **Antigravity ya está activo** (ver abajo, Fase 3.1/2.4/4.2). Retoma ownership normal de `docs/WORKFLOW.md` sección 2 — Claude Code ya no asume tareas `[ANTIGRAVITY]` por defecto, salvo negociación puntual vía esta misma nota.
 
 ## En progreso
 
 ### Claude Code
 
 - **Repo:** ninguno activo ahora mismo.
-- **Descripción:** Fase 4.1 (Budget guard + kill switch) completa — [PR #6](https://github.com/JFrnck/Yormun_Core/pull/6), **mergeado**. `src/budget/`: tracking de tokens/$ por sesión (memoria) y día (Postgres), degradación al 80% reusando el hint `budgetRemaining` de `selectModel` (Fase 3.1, sin consumidor hasta ahora), kill switch de runaway persistido (`budget_kill_switch`), métricas Prometheus (`@willsoto/nestjs-prometheus`). `BudgetGuardedModelRouter` envuelve `ModelRouterService` sin modificarlo — Canvas y Telegram ya lo inyectan en vez del router directo. `/budget` en Telegram reporta datos reales; `/unpause` nuevo. 87 tests nuevos, CI verde, verificado con `tsc --noEmit -p tsconfig.json` + integración Postgres real.
-- **Además:** prerequisito "ejecutar al aprobar" completo — [PR #8](https://github.com/JFrnck/Yormun_Core/pull/8), **mergeado**. Ver sección "Fase 4.2 — decisiones y prerequisitos" abajo para el detalle y el handoff a Antigravity.
-- **Próximo:** ninguno pendiente — a la espera de que Antigravity arranque la implementación real de Fase 4.2.
+- **Descripción:** Fase 4.1 (Budget guard + kill switch) completa — [PR #6](https://github.com/JFrnck/Yormun_Core/pull/6), **mergeado**. Prerequisito "ejecutar al aprobar" completo — [PR #8](https://github.com/JFrnck/Yormun_Core/pull/8), **mergeado**.
+- **Próximo:** Fase 4.3 (Memoria sqlite-vec).
 
 ### Antigravity
 
 - **Repo:** Yormun_Core
-- **Rama:** `feature/antigravity/google-workspace` (ya creada, en pausa — ver nota abajo)
-- **Descripción:** Fase 4.2 — Google Calendar + Gmail (`src/integrations/google/`).
-- **Archivos activos:** solo `src/integrations/google/` — **no tocar `src/tools/registry.ts`**, las 4 tools de Calendar ya están declaradas ([PR #7](https://github.com/JFrnck/Yormun_Core/pull/7), mergeado): `listCalendarEvents` (auto), `updateCalendarEvent` (notify), `deleteCalendarEventPast` (notify), `deleteCalendarEventFuture` (confirm). Gmail reusa `readEmails`/`sendEmail` ya existentes desde Fase 2.2, sin tools nuevas.
-- **Estado:** 🔵 **Desbloqueado — puede retomar.** Se pausó la implementación mientras Claude Code construía el prerequisito de `ToolExecutorRegistry`/`ApprovalExecutionService` (PR #8, ya mergeado — ver detalle abajo). `sendEmail` y `deleteCalendarEventFuture` (los 2 tools `confirm` reales de esta fase) deben registrarse contra `ToolExecutorRegistry` en su propio `onModuleInit()` en vez de ejecutar directo.
+- **Rama:** `feature/antigravity/google-workspace` — [PR #9](https://github.com/JFrnck/Yormun_Core/pull/9) **abierto**.
+- **Descripción:** Fase 4.2 completa — Google Calendar + Gmail (`src/integrations/google/`).
+- **Archivos creados/modificados:** `src/integrations/google/` (OAuth Service con alerta de token expirado a los >= 6 días, Calendar client/tools, Gmail client/tools), migración `drizzle/0003_google_oauth_state.sql` y `.down.sql`, `GoogleModule` registrando tool executors en `ToolExecutorRegistry`, actualización de `canvasScheduleStudyBlock` delegando en Calendar. 189 tests pasados (32 test files), build NestJS limpio, TypeScript 0 errores.
 
 
 ## Feedback Ronda 3 (Telegram) para Antigravity, enviado 2026-07-23
@@ -106,6 +104,7 @@ Lo que el plan sí acierta: los 3 niveles HITL coinciden con blueprint/PROMPTS, 
 | Yormun_Core | [#6](https://github.com/JFrnck/Yormun_Core/pull/6) | Fase 4.1: budget guard + kill switch | ✅ mergeado |
 | Yormun_Core | [#7](https://github.com/JFrnck/Yormun_Core/pull/7) | Prerequisito Fase 4.2: 4 tools de Calendar en registry.ts | ✅ mergeado |
 | Yormun_Core | [#8](https://github.com/JFrnck/Yormun_Core/pull/8) | Prerequisito Fase 4.2: mecanismo "ejecutar al aprobar" (`ToolExecutorRegistry` + `ApprovalExecutionService`) | ✅ mergeado |
+| Yormun_Core | [#9](https://github.com/JFrnck/Yormun_Core/pull/9) | Fase 4.2: integración Google Calendar + Gmail (OAuth Testing, rate limiting, sanitización, diferido HITL) | 🟡 abierto |
 
 **Nota — Yormun_Infra #2 se reemplazó por #3:** al mergear #1 con `--delete-branch`, GitHub cerró automáticamente #2 porque su rama base (`feature/claude/infra-base`, la de #1) dejó de existir — efecto colateral no documentado de GitHub en PRs apilados, no una acción intencional. Un PR cerrado así no se puede reabrir ni re-apuntar vía API una vez cerrado. Recuperado abriendo #3 desde la misma rama head (`feature/claude/infra-backups`, intacta) directo contra `main`; contenido idéntico (26 archivos, 1128 inserciones), CI verde, mergeado normalmente.
 
