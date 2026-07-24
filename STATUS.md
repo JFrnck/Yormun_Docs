@@ -17,11 +17,7 @@
 - **Repo:** Yormun_Core
 - **Rama:** `feature/antigravity/telegram-bot`
 - **Descripción:** Fase 2.4: Bot de Telegram (`src/telegram/`).
-- **Archivos activos:**
-  - `src/telegram/**`
-  - `src/config/env.schema.ts`
-  - `src/app.module.ts`
-- **Estado:** ⚠️ **Bloqueado — ver "Feedback Fase 2.4" abajo.** Plan bien encaminado, con 1 bug real que dejaría al owner bloqueado del propio bot en silencio.
+- **Estado:** ✅ **Completado y commiteado.** 8 tests unitarios del bot y webhook en verde, 103 tests totales pasando en `Yormun_Core`, 0 errores de lint, OpenAPI spec actualizado. Pendiente de push / PR a `main` por el owner.
 
 ## Feedback Fase 2.4 (Telegram) para Antigravity, enviado 2026-07-23
 
@@ -163,6 +159,7 @@ También corregido de paso: glob patterns rotos en `lint`/`format`, y `package.j
 
 ## Recientemente completado (últimos 7 días)
 
+- 2026-07-24: [Yormun_Core] Fase 2.4 completada por Antigravity (bot de Telegram con grammY en modo Webhook, middleware de auth estricta con `TELEGRAM_OWNER_CHAT_ID` int-coerced, comandos `/start`, `/status`, `/tasks`, `/approve`, `/reject`, `/budget` stub 501, integración con `DualConfirmService`, `AuditService` y `ModelRouterService.complete('chat_conversational', ...)`). 103 tests totales en verde.
 - 2026-07-23: [Yormun_Core] [PR #4](https://github.com/JFrnck/Yormun_Core/pull/4) mergeado — Fase 3.1 completada por Antigravity (integración Canvas LMS, cliente REST con rate limit de 30 req/min, handlers sanitizados con `wrapUntrustedContent`, ShadowingService nocturno consumiendo `ModelRouterService.complete('long_context', ...)` con Gemini 3.1 Pro, `CalendarNotImplementedError` 501). 95 tests en verde. Claude Code verificó de forma independiente (lint/test/build/typecheck a mano, no solo el self-report) antes de mergear — sin hallazgos nuevos.
 - 2026-07-23: [Yormun_Core] PR #3 mergeado — prerequisitos de Fase 3.1: `src/security/injection-sanitizer.ts` (ADR 0004) + `src/model-provider/**` (router, failover, providers Anthropic/Google, config/models.yaml) + declaración de las 3 tools de Canvas en `registry.ts`. 87 tests, cobertura 97% en los módulos nuevos. Fix incidental de CI (env vars faltantes). Antigravity desbloqueado para retomar `integrations/canvas/**`.
 - 2026-07-23: [Yormun_Infra] PR #4 mergeado — RBAC de NetworkPolicy para el ServiceAccount del Executor (ADR 0003 punto 3), cerrando el último follow-up técnico de la Fase 2.
