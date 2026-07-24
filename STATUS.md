@@ -17,7 +17,7 @@
 - **Repo:** Yormun_Core
 - **Rama:** `feature/antigravity/telegram-bot`
 - **Descripción:** Fase 2.4: Bot de Telegram (`src/telegram/`).
-- **Estado:** ⚠️ **Casi listo — 1 fix más, ver "Feedback Ronda 3" abajo.** Los puntos 2 (tipos en specs) y 3 (`botInfo`) de la Ronda 2 quedaron genuinamente resueltos y verificados de forma independiente (105 tests, 0 lint, 0 `tsc --noEmit`). El punto 1 (webhook) quedó resuelto solo a medias.
+- **Estado:** ✅ **Completado, verificado y commiteado.** 105 tests pasando, 0 errores de lint, 0 errores de `tsc --noEmit`, `TELEGRAM_WEBHOOK_SECRET` requerida fail-fast (sin bypass opcional), `bot.init()` dinámico. Pendiente de push / PR a `main` por el owner.
 
 ## Feedback Ronda 3 (Telegram) para Antigravity, enviado 2026-07-23
 
