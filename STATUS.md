@@ -1,6 +1,6 @@
 # STATUS
 
-## Última actualización: 2026-07-24 (America/Lima)
+## Última actualización: 2026-07-24 (America/Lima) — actualización 2
 
 > **Antigravity ya está activo** (ver abajo, Fase 3.1/2.4). Retoma ownership normal de `docs/WORKFLOW.md` sección 2 — Claude Code ya no asume tareas `[ANTIGRAVITY]` por defecto, salvo negociación puntual vía esta misma nota.
 
@@ -10,15 +10,16 @@
 
 - **Repo:** ninguno activo ahora mismo.
 - **Descripción:** Fase 4.1 (Budget guard + kill switch) completa — [PR #6](https://github.com/JFrnck/Yormun_Core/pull/6), **mergeado**. `src/budget/`: tracking de tokens/$ por sesión (memoria) y día (Postgres), degradación al 80% reusando el hint `budgetRemaining` de `selectModel` (Fase 3.1, sin consumidor hasta ahora), kill switch de runaway persistido (`budget_kill_switch`), métricas Prometheus (`@willsoto/nestjs-prometheus`). `BudgetGuardedModelRouter` envuelve `ModelRouterService` sin modificarlo — Canvas y Telegram ya lo inyectan en vez del router directo. `/budget` en Telegram reporta datos reales; `/unpause` nuevo. 87 tests nuevos, CI verde, verificado con `tsc --noEmit -p tsconfig.json` + integración Postgres real.
-- **Próximo:** ninguno pendiente — **Fase 4.1 completa y mergeada a `main`.**
+- **Además:** prerequisito "ejecutar al aprobar" completo — [PR #8](https://github.com/JFrnck/Yormun_Core/pull/8), **mergeado**. Ver sección "Fase 4.2 — decisiones y prerequisitos" abajo para el detalle y el handoff a Antigravity.
+- **Próximo:** ninguno pendiente — a la espera de que Antigravity arranque la implementación real de Fase 4.2.
 
 ### Antigravity
 
 - **Repo:** Yormun_Core
-- **Rama:** `feature/antigravity/google-workspace` (a crear)
+- **Rama:** `feature/antigravity/google-workspace` (ya creada, en pausa — ver nota abajo)
 - **Descripción:** Fase 4.2 — Google Calendar + Gmail (`src/integrations/google/`).
 - **Archivos activos:** solo `src/integrations/google/` — **no tocar `src/tools/registry.ts`**, las 4 tools de Calendar ya están declaradas ([PR #7](https://github.com/JFrnck/Yormun_Core/pull/7), mergeado): `listCalendarEvents` (auto), `updateCalendarEvent` (notify), `deleteCalendarEventPast` (notify), `deleteCalendarEventFuture` (confirm). Gmail reusa `readEmails`/`sendEmail` ya existentes desde Fase 2.2, sin tools nuevas.
-- **Estado:** 🔵 **Siguiente tarea, arrancando.**
+- **Estado:** 🔵 **Desbloqueado — puede retomar.** Se pausó la implementación mientras Claude Code construía el prerequisito de `ToolExecutorRegistry`/`ApprovalExecutionService` (PR #8, ya mergeado — ver detalle abajo). `sendEmail` y `deleteCalendarEventFuture` (los 2 tools `confirm` reales de esta fase) deben registrarse contra `ToolExecutorRegistry` en su propio `onModuleInit()` en vez de ejecutar directo.
 
 
 ## Feedback Ronda 3 (Telegram) para Antigravity, enviado 2026-07-23
@@ -104,6 +105,7 @@ Lo que el plan sí acierta: los 3 niveles HITL coinciden con blueprint/PROMPTS, 
 | Yormun_Core | [#5](https://github.com/JFrnck/Yormun_Core/pull/5) | Fase 2.4: bot de Telegram (grammY + webhook + auth + secret_token) | ✅ mergeado |
 | Yormun_Core | [#6](https://github.com/JFrnck/Yormun_Core/pull/6) | Fase 4.1: budget guard + kill switch | ✅ mergeado |
 | Yormun_Core | [#7](https://github.com/JFrnck/Yormun_Core/pull/7) | Prerequisito Fase 4.2: 4 tools de Calendar en registry.ts | ✅ mergeado |
+| Yormun_Core | [#8](https://github.com/JFrnck/Yormun_Core/pull/8) | Prerequisito Fase 4.2: mecanismo "ejecutar al aprobar" (`ToolExecutorRegistry` + `ApprovalExecutionService`) | ✅ mergeado |
 
 **Nota — Yormun_Infra #2 se reemplazó por #3:** al mergear #1 con `--delete-branch`, GitHub cerró automáticamente #2 porque su rama base (`feature/claude/infra-base`, la de #1) dejó de existir — efecto colateral no documentado de GitHub en PRs apilados, no una acción intencional. Un PR cerrado así no se puede reabrir ni re-apuntar vía API una vez cerrado. Recuperado abriendo #3 desde la misma rama head (`feature/claude/infra-backups`, intacta) directo contra `main`; contenido idéntico (26 archivos, 1128 inserciones), CI verde, mergeado normalmente.
 
@@ -125,6 +127,8 @@ Los `"name": "temp-*"` de `package.json` en Web y CLI ya no aplican como pendien
 - **2026-07-23 — Después de Fase 3.1, siguiente prioridad: terminar Fase 2.4 (bot de Telegram), no Fase 4.x.** La Tarea A de Fase 2.4 (`model-provider`) ya quedó hecha de rebote en PR #3. Queda solo la Tarea B (`src/telegram/`, grammY). El owner la priorizó sobre Budget guard (4.1)/Google Calendar (4.2)/Memoria (4.3) porque el sistema HITL ya construido no tiene todavía ningún canal real de notificación/aprobación.
 - **2026-07-24 — Fase 4.1: alertas de budget/kill switch van directo a Telegram, no vía Alertmanager.** BLUEPRINT 9.6/10.4 especifica "Alertmanager → Telegram", pero Alertmanager nunca se desplegó (Fase 1 observability quedó explícitamente mínima: Prometheus + Loki + Grafana). Desplegarlo ahora era trabajo de infra fuera de alcance de Fase 4.1. Se decidió notificar directo desde `Yormun_Core` al bot ya construido (Fase 2.4) — mismo destino final, sin la dependencia de infra nueva. Documentado en el plan de la fase, no requirió pausar para preguntar.
 - **2026-07-24 — Fase 4.1: `sessionId` opcional en `BudgetGuardedModelRouter`, no una abstracción de sesión persistente.** El código no tenía ningún concepto de "sesión" (ningún caller pasaba un ID). Se agregó un `sessionId` opcional — si no se pasa, cada llamada es su propia sesión (UUID nuevo). Telegram usa un `sessionId` fijo por chat (conversación libre comparte presupuesto); Canvas/shadowing no pasa ninguno (cada corrida nocturna es una sola llamada). Evita inventar una abstracción de sesión persistente que nada más en el sistema necesita todavía.
+- **2026-07-24 — Fase 4.2: OAuth scopes confirmados por el owner.** `calendar` (lectura/escritura de eventos), `gmail.readonly` (leer correos), `gmail.send` (enviar/responder) — los 3 mínimos necesarios para las tools ya declaradas, sin scopes de administración ni de otras APIs de Workspace.
+- **2026-07-24 — Fase 4.2: el hallazgo "no existe mecanismo de ejecutar-al-aprobar" lo construye Claude Code primero, no Antigravity.** Al revisar el plan de Antigravity para Google Calendar/Gmail se detectó que ningún tool `confirm` anterior había tenido efectos reales (Canvas es todo `auto`; `sendEmail` se declaró en Fase 2.2 pero nunca se implementó) — por lo que `TelegramBotService.processApproval()` nunca ejecutaba nada, solo cambiaba estado y auditaba, y `pending_approvals` no guardaba el payload de la acción. Se le presentaron 2 opciones al owner: que Antigravity resolviera esto de forma acotada a sus 2 tools, o que Claude Code construyera el mecanismo genérico primero. Eligió que Claude Code lo construyera primero (mismo criterio que los prerequisitos de Fase 3.1: infraestructura compartida que futuras integraciones también necesitarán). Resultado: PR #8 (`ToolExecutorRegistry` + `ApprovalExecutionService`), ver detalle en la sección "Fase 4.2 — decisiones y prerequisitos".
 
 ## Plan aprobado
 
@@ -143,7 +147,16 @@ Los `"name": "temp-*"` de `package.json` en Web y CLI ya no aplican como pendien
 ## Bloqueados / esperando
 
 - Ejecución real del bootstrap en la VM OCI la hace el owner (Claude Code solo escribe manifests/scripts).
-- Confirmar con el owner qué cuenta de Google y qué scopes usar antes de implementar OAuth (paso explícito de `PROMPTS.md` §4.2, punto 3) — Antigravity todavía no lo hizo.
+
+## Feedback Ronda 1 (Google Calendar + Gmail) para Antigravity, enviado 2026-07-24
+
+Claude Code revisó el plan de Antigravity para `src/integrations/google/` (además de resolver los 2 puntos de diseño de la sección siguiente, que ya se le comunicaron aparte). 3 puntos pendientes de ajustar antes/durante la implementación:
+
+1. **Falta rate limiting.** `PROMPTS.md` §4.2 exige explícitamente "Rate limiting según los límites de Google APIs" como restricción — el plan de `google-calendar-client.service.ts`/`google-gmail-client.service.ts` no menciona ningún limiter, a diferencia de `CanvasClientService` (Fase 3.1) que sí implementa una ventana deslizante de 30 req/min. Aplicar el mismo patrón (ajustado a los límites reales de Calendar/Gmail API, que son más generosos que Canvas pero no infinitos).
+2. **Cron de refresh de OAuth con día fijo de la semana no puede modelar "24h antes del vencimiento real".** El plan usa `@Cron('0 9 * * 1')` (todos los lunes). Pero el vencimiento real es 7 días desde el último refresh — que no necesariamente cae en lunes, y se corre en el tiempo cada vez que se hace un refresh real. Un cron de día fijo puede avisar demasiado tarde (o innecesariamente temprano) según cuándo se hizo el último refresh. Correcto: cron diario (`@Cron('0 9 * * *')`) que compara `now` contra un timestamp persistido de "último refresh" + 6 días (aviso a las 24h del vencimiento real), no contra un día de la semana fijo.
+3. **`GOOGLE_REFRESH_TOKEN` no debería ser opcional.** Mismo anti-patrón que `TELEGRAM_WEBHOOK_SECRET` en la Ronda 3 de Telegram (ver arriba): "hay que obtenerlo manualmente una vez" no es motivo válido para saltarse fail-fast — ese mismo argumento se usó y se rechazó para otros secrets. Debe ser requerida (`AGENTS.md` línea 371), el bootstrap manual de obtenerlo una vez es un paso de operación, no una razón para permitir que el módulo arranque sin él.
+
+Lo que el plan sí acierta: consumo correcto de `wrapUntrustedContent` para el contenido de emails/eventos, reuso de las tools ya declaradas en `registry.ts` sin tocarlo, y el diseño de OAuth2 con refresh token vía Infisical (no en env plano) es correcto.
 
 ## Fase 4.2 — decisiones y prerequisitos (Yormun_Core PR #7)
 
@@ -155,6 +168,17 @@ Antes de que Antigravity implemente `src/integrations/google/`, se resolvieron 2
 Gmail no suma tools nuevas: "listar/leer" reusa `readEmails` (auto, Fase 2.2), "responder/enviar nuevo" reusa `sendEmail` (confirm, Fase 2.2) — ambos pares ya comparten el nivel HITL correcto, no hay motivo para declarar duplicados. `createCalendarEvent` (Fase 2.2) también se reusa tal cual para "crear evento".
 
 Nota técnica para Antigravity: BLUEPRINT 7.2 menciona "job en BullMQ" para el aviso de refresh de OAuth cada 7 días, pero BullMQ no está instalado en el repo — todos los crons existentes (`chain-verification`, `timeout`, `kill-switch`, `shadowing`) usan `@nestjs/schedule` (`@Cron`). Usar el mismo patrón, no agregar BullMQ para un solo job semanal.
+
+### Prerequisito 3: mecanismo "ejecutar al aprobar" (PR #8, mergeado)
+
+Al revisar el plan de Antigravity se encontró que **no existe ningún mecanismo para ejecutar la acción real de un tool al aprobarse** — `TelegramBotService.processApproval()` (Fase 2.4) solo orquestaba `DualConfirmService.recordApproval()` + `AuditService.recordApproval()`, nunca invocaba lógica de ningún tool. Tampoco se guardaba el payload de la acción (to/subject/body de un email, etc.) en `pending_approvals`. No se había notado antes porque `sendEmail` (único `confirm` declarado hasta ahora) nunca se implementó. Resuelto en PR #8:
+
+- `pendingApprovals` gana columna `payload` (jsonb, nullable).
+- `ToolExecutorRegistry` (nuevo, `src/hitl/tool-executor.registry.ts`): registro en memoria `toolName → executor`. Cada módulo de integración se registra en su propio `onModuleInit()` — `src/hitl/` no importa Google/Canvas/etc., evitando ciclos.
+- `DualConfirmService.createPendingApproval` acepta `payload?: unknown` opcional.
+- `ApprovalExecutionService` (nuevo, `src/hitl/approval-execution.service.ts`): `resolveAndExecute(requestId, approver)` / `resolveRejection(requestId, approver)` — orquesta resolver + ejecutar + auditar + limpiar pendiente en un solo lugar. `TelegramBotService.processApproval/processRejection` ahora delegan acá en vez de orquestar `DualConfirmService`+`AuditService` a mano.
+
+**Handoff a Antigravity:** `sendEmail` y `deleteCalendarEventFuture` (los 2 tools `confirm`/`dual-confirm` reales de esta fase) deben, en el `onModuleInit()` de su propio módulo de Google, llamar `toolExecutorRegistry.register('sendEmail', async (payload) => {...})` con la lógica real de envío/borrado. El handler de la tool, en vez de ejecutar directo, llama `classifyToolCall` y si no es `auto`, crea la pending approval con `dualConfirmService.createPendingApproval({ ..., payload })` (el payload con to/subject/body o eventId) y devuelve "en espera de aprobación" — no ejecuta nada hasta que `ApprovalExecutionService` lo resuelva desde Telegram.
 
 ## Fase 2.3 (follow-up) — RBAC de NetworkPolicy en Yormun_Infra (PR #4)
 
