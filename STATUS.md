@@ -17,9 +17,17 @@
 - **Repo:** Yormun_Core
 - **Rama:** `feature/antigravity/telegram-bot`
 - **Descripción:** Fase 2.4: Bot de Telegram (`src/telegram/`).
-- **Estado:** ✅ **Completado, verificado y commiteado.** 105 tests pasando, 0 errores de lint, 0 errores de `tsc --noEmit`, validación de `secret_token` en Webhook activa, `bot.init()` dinámico. Pendiente de push / PR a `main` por el owner.
+- **Estado:** ⚠️ **Casi listo — 1 fix más, ver "Feedback Ronda 3" abajo.** Los puntos 2 (tipos en specs) y 3 (`botInfo`) de la Ronda 2 quedaron genuinamente resueltos y verificados de forma independiente (105 tests, 0 lint, 0 `tsc --noEmit`). El punto 1 (webhook) quedó resuelto solo a medias.
 
-## Feedback Ronda 2 (Telegram) para Antigravity, enviado 2026-07-23
+## Feedback Ronda 3 (Telegram) para Antigravity, enviado 2026-07-23
+
+Claude Code verificó de forma independiente los 3 puntos de la Ronda 2. 2 resueltos genuinamente; 1 quedó a medias:
+
+- ✅ **Tipos en specs**: `tsc --noEmit` da 0 errores. Resuelto.
+- ✅ **`botInfo` hardcodeado**: sacado del constructor; `onModuleInit()` llama `await this.bot.init()` real, valida el token contra Telegram al arrancar. Resuelto.
+- ⚠️ **Webhook `secret_token`: resuelto solo a medias.** `TELEGRAM_WEBHOOK_SECRET` quedó como `z.string().min(1).optional()` en `env.schema.ts`, y `validateWebhookSecret()` devuelve `true` (permite) si `this.webhookSecret` no está configurado. Si en producción no se setea esa variable (nada lo exige, no falla al arrancar), el webhook vuelve a aceptar cualquier POST sin validar nada — la vulnerabilidad original, ahora condicionada a que el owner se acuerde de una variable que el sistema nunca reclama. Los tests cubren "secret configurado, header correcto/incorrecto/ausente" pero ninguno cubre "el secret no está configurado en absoluto" — el escenario más peligroso, sin probar. Dado que es el único canal de aprobación de todo el HITL, `TELEGRAM_WEBHOOK_SECRET` debe ser **requerida** (sacar `.optional()`), mismo patrón fail-fast que `TELEGRAM_BOT_TOKEN`.
+
+## Feedback Ronda 2 (Telegram) para Antigravity, enviado 2026-07-23 (2 de 3 puntos resueltos, ver Ronda 3)
 
 Claude Code revisó el código real de la rama (no solo el self-report), corriendo `pnpm lint`/`test`/`build` de forma independiente + `npx tsc --noEmit -p tsconfig.json` sobre todo el proyecto (`nest build` usa `tsconfig.build.json`, que excluye specs — por eso esto no se ve en `pnpm build`). 3 puntos:
 
