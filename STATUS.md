@@ -14,9 +14,11 @@
 
 ### Antigravity
 
-- **Repo:** ninguno activo ahora mismo.
-- **Descripción:** Fase 2.4 completa — bot de Telegram (`src/telegram/`) mergeado en [PR #5](https://github.com/JFrnck/Yormun_Core/pull/5). CI verde (GitGuardian + build), verificado independientemente por Claude Code antes de mergear (`lint`/`test`/`build`/`tsc --noEmit`, 105 tests, `TELEGRAM_WEBHOOK_SECRET` requerida fail-fast confirmada en el código real, no solo en el self-report).
-- **Estado:** ✅ **Mergeado a `main`.** Fase 2.4 cerrada — el sistema HITL ya tiene un canal real de notificación/aprobación.
+- **Repo:** Yormun_Core
+- **Rama:** `feature/antigravity/google-workspace` (a crear)
+- **Descripción:** Fase 4.2 — Google Calendar + Gmail (`src/integrations/google/`).
+- **Archivos activos:** solo `src/integrations/google/` — **no tocar `src/tools/registry.ts`**, las 4 tools de Calendar ya están declaradas ([PR #7](https://github.com/JFrnck/Yormun_Core/pull/7), mergeado): `listCalendarEvents` (auto), `updateCalendarEvent` (notify), `deleteCalendarEventPast` (notify), `deleteCalendarEventFuture` (confirm). Gmail reusa `readEmails`/`sendEmail` ya existentes desde Fase 2.2, sin tools nuevas.
+- **Estado:** 🔵 **Siguiente tarea, arrancando.**
 
 
 ## Feedback Ronda 3 (Telegram) para Antigravity, enviado 2026-07-23
@@ -101,6 +103,7 @@ Lo que el plan sí acierta: los 3 niveles HITL coinciden con blueprint/PROMPTS, 
 | Yormun_Core | [#4](https://github.com/JFrnck/Yormun_Core/pull/4) | Fase 3.1: integración Canvas LMS + Shadowing Académico | ✅ mergeado |
 | Yormun_Core | [#5](https://github.com/JFrnck/Yormun_Core/pull/5) | Fase 2.4: bot de Telegram (grammY + webhook + auth + secret_token) | ✅ mergeado |
 | Yormun_Core | [#6](https://github.com/JFrnck/Yormun_Core/pull/6) | Fase 4.1: budget guard + kill switch | ✅ mergeado |
+| Yormun_Core | [#7](https://github.com/JFrnck/Yormun_Core/pull/7) | Prerequisito Fase 4.2: 4 tools de Calendar en registry.ts | ✅ mergeado |
 
 **Nota — Yormun_Infra #2 se reemplazó por #3:** al mergear #1 con `--delete-branch`, GitHub cerró automáticamente #2 porque su rama base (`feature/claude/infra-base`, la de #1) dejó de existir — efecto colateral no documentado de GitHub en PRs apilados, no una acción intencional. Un PR cerrado así no se puede reabrir ni re-apuntar vía API una vez cerrado. Recuperado abriendo #3 desde la misma rama head (`feature/claude/infra-backups`, intacta) directo contra `main`; contenido idéntico (26 archivos, 1128 inserciones), CI verde, mergeado normalmente.
 
@@ -140,7 +143,18 @@ Los `"name": "temp-*"` de `package.json` en Web y CLI ya no aplican como pendien
 ## Bloqueados / esperando
 
 - Ejecución real del bootstrap en la VM OCI la hace el owner (Claude Code solo escribe manifests/scripts).
-- Decisión del owner sobre por dónde seguir: Fase 4.2 (Google Calendar + Gmail, Antigravity) o Fase 4.3 (Memoria sqlite-vec, Claude Code).
+- Confirmar con el owner qué cuenta de Google y qué scopes usar antes de implementar OAuth (paso explícito de `PROMPTS.md` §4.2, punto 3) — Antigravity todavía no lo hizo.
+
+## Fase 4.2 — decisiones y prerequisitos (Yormun_Core PR #7)
+
+Antes de que Antigravity implemente `src/integrations/google/`, se resolvieron 2 cosas que `PROMPTS.md` §4.2 no cubre o contradice:
+
+1. **"Borrar evento pasado: notify, borrar evento futuro: confirm" no se puede expresar como una sola tool.** El `hitlLevel` es estático por tool y nunca depende de inputs en runtime (`AGENTS.md` §5.4, probado explícitamente en `classifier.spec.ts`). Se separó en `deleteCalendarEventPast` (notify) y `deleteCalendarEventFuture` (confirm) — el LLM elige cuál invocar según la fecha del evento antes de llamar, no el clasificador después.
+2. **`updateCalendarEvent`: nivel HITL no especificado en los docs.** El owner confirmó `notify` (mismo riesgo que crear un evento).
+
+Gmail no suma tools nuevas: "listar/leer" reusa `readEmails` (auto, Fase 2.2), "responder/enviar nuevo" reusa `sendEmail` (confirm, Fase 2.2) — ambos pares ya comparten el nivel HITL correcto, no hay motivo para declarar duplicados. `createCalendarEvent` (Fase 2.2) también se reusa tal cual para "crear evento".
+
+Nota técnica para Antigravity: BLUEPRINT 7.2 menciona "job en BullMQ" para el aviso de refresh de OAuth cada 7 días, pero BullMQ no está instalado en el repo — todos los crons existentes (`chain-verification`, `timeout`, `kill-switch`, `shadowing`) usan `@nestjs/schedule` (`@Cron`). Usar el mismo patrón, no agregar BullMQ para un solo job semanal.
 
 ## Fase 2.3 (follow-up) — RBAC de NetworkPolicy en Yormun_Infra (PR #4)
 
@@ -184,6 +198,7 @@ También corregido de paso: glob patterns rotos en `lint`/`format`, y `package.j
 
 ## Recientemente completado (últimos 7 días)
 
+- 2026-07-24: [Yormun_Core] [PR #7](https://github.com/JFrnck/Yormun_Core/pull/7) mergeado — prerequisito de Fase 4.2: 4 tools de Calendar declaradas en `registry.ts` (`listCalendarEvents` auto, `updateCalendarEvent` notify, `deleteCalendarEventPast` notify, `deleteCalendarEventFuture` confirm). Matriz HITL actualizada a 10 tools, 100% cobertura.
 - 2026-07-24: [Yormun_Core] [PR #6](https://github.com/JFrnck/Yormun_Core/pull/6) mergeado — Fase 4.1 completa: `src/budget/` (tracking sesión/día, degradación al 80% vía el hint `budgetRemaining` de Fase 3.1, kill switch de runaway persistido en Postgres), métricas Prometheus, `BudgetGuardedModelRouter` ya inyectado en Canvas y Telegram, `/budget` con datos reales y `/unpause` nuevo en el bot. 87 tests nuevos (unitarios + integración Postgres real), CI verde, verificado con `tsc --noEmit -p tsconfig.json` de forma independiente antes de mergear.
 - 2026-07-24: [Yormun_Core] [PR #5](https://github.com/JFrnck/Yormun_Core/pull/5) mergeado — Fase 2.4 completa: bot de Telegram con grammY en modo webhook, auth estricta con `TELEGRAM_OWNER_CHAT_ID` numérico, `TELEGRAM_WEBHOOK_SECRET` requerida fail-fast validando el header de Telegram, `bot.init()` real, comandos `/start`/`/status`/`/tasks`/`/approve`/`/reject`/`/budget` (stub honesto), integración con `DualConfirmService`/`AuditService`/`ModelRouterService`. 3 rondas de review contra el código real (bug de tipos chat_id, gap de seguridad del webhook, `botInfo` hardcodeado, tipos en specs invisibles a `pnpm build`), todas resueltas y verificadas independientemente antes de mergear. 105 tests en verde.
 - 2026-07-23: [Yormun_Core] [PR #4](https://github.com/JFrnck/Yormun_Core/pull/4) mergeado — Fase 3.1 completada por Antigravity (integración Canvas LMS, cliente REST con rate limit de 30 req/min, handlers sanitizados con `wrapUntrustedContent`, ShadowingService nocturno consumiendo `ModelRouterService.complete('long_context', ...)` con Gemini 3.1 Pro, `CalendarNotImplementedError` 501). 95 tests en verde. Claude Code verificó de forma independiente (lint/test/build/typecheck a mano, no solo el self-report) antes de mergear — sin hallazgos nuevos.
