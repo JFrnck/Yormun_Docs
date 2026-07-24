@@ -1,16 +1,16 @@
 # STATUS
 
-## Última actualización: 2026-07-23 (America/Lima)
+## Última actualización: 2026-07-24 (America/Lima)
 
-> **Antigravity ya está activo** (ver abajo, Fase 3.1). Retoma ownership normal de `docs/WORKFLOW.md` sección 2 — Claude Code ya no asume tareas `[ANTIGRAVITY]` por defecto, salvo negociación puntual vía esta misma nota.
+> **Antigravity ya está activo** (ver abajo, Fase 3.1/2.4). Retoma ownership normal de `docs/WORKFLOW.md` sección 2 — Claude Code ya no asume tareas `[ANTIGRAVITY]` por defecto, salvo negociación puntual vía esta misma nota.
 
 ## En progreso
 
 ### Claude Code
 
 - **Repo:** ninguno activo ahora mismo.
-- **Descripción:** construyó los prerequisitos de Fase 3.1 ([PR #3](https://github.com/JFrnck/Yormun_Core/pull/3), mergeado) y revisó/verificó de forma independiente (no solo confiando en el self-report) el PR de Antigravity ([PR #4](https://github.com/JFrnck/Yormun_Core/pull/4), **mergeado**) antes de mergearlo: `pnpm lint`/`test`/`build`/`tsc --noEmit` corridos a mano sobre la rama, confirmó que los 3 puntos de la Ronda 2 quedaron bien resueltos y que `registry.ts` no fue tocado.
-- **Próximo:** ninguno pendiente — **Fase 3.1 completa y mergeada a `main`.**
+- **Descripción:** Fase 4.1 (Budget guard + kill switch) completa — [PR #6](https://github.com/JFrnck/Yormun_Core/pull/6), **mergeado**. `src/budget/`: tracking de tokens/$ por sesión (memoria) y día (Postgres), degradación al 80% reusando el hint `budgetRemaining` de `selectModel` (Fase 3.1, sin consumidor hasta ahora), kill switch de runaway persistido (`budget_kill_switch`), métricas Prometheus (`@willsoto/nestjs-prometheus`). `BudgetGuardedModelRouter` envuelve `ModelRouterService` sin modificarlo — Canvas y Telegram ya lo inyectan en vez del router directo. `/budget` en Telegram reporta datos reales; `/unpause` nuevo. 87 tests nuevos, CI verde, verificado con `tsc --noEmit -p tsconfig.json` + integración Postgres real.
+- **Próximo:** ninguno pendiente — **Fase 4.1 completa y mergeada a `main`.**
 
 ### Antigravity
 
@@ -100,6 +100,7 @@ Lo que el plan sí acierta: los 3 niveles HITL coinciden con blueprint/PROMPTS, 
 | Yormun_Core | [#3](https://github.com/JFrnck/Yormun_Core/pull/3) | Prerequisitos Fase 3.1: injection-sanitizer + model-provider (ADR 0004) | ✅ mergeado |
 | Yormun_Core | [#4](https://github.com/JFrnck/Yormun_Core/pull/4) | Fase 3.1: integración Canvas LMS + Shadowing Académico | ✅ mergeado |
 | Yormun_Core | [#5](https://github.com/JFrnck/Yormun_Core/pull/5) | Fase 2.4: bot de Telegram (grammY + webhook + auth + secret_token) | ✅ mergeado |
+| Yormun_Core | [#6](https://github.com/JFrnck/Yormun_Core/pull/6) | Fase 4.1: budget guard + kill switch | ✅ mergeado |
 
 **Nota — Yormun_Infra #2 se reemplazó por #3:** al mergear #1 con `--delete-branch`, GitHub cerró automáticamente #2 porque su rama base (`feature/claude/infra-base`, la de #1) dejó de existir — efecto colateral no documentado de GitHub en PRs apilados, no una acción intencional. Un PR cerrado así no se puede reabrir ni re-apuntar vía API una vez cerrado. Recuperado abriendo #3 desde la misma rama head (`feature/claude/infra-backups`, intacta) directo contra `main`; contenido idéntico (26 archivos, 1128 inserciones), CI verde, mergeado normalmente.
 
@@ -119,6 +120,8 @@ Los `"name": "temp-*"` de `package.json` en Web y CLI ya no aplican como pendien
 - **2026-07-23 — Canvas LMS: single-tenant confirmado, sin soporte multi-usuario.** El owner preguntó si Canvas soportaría "cambiar de usuario" (cuentas de terceros); se le presentaron 3 opciones (single-tenant / multi-cuenta propia / multi-tenant real) y confirmó mantener single-tenant, consistente con BLUEPRINT §1-2 ("plataforma personal", no multi-región/HA). Un solo Personal Access Token de Canvas (del owner) → Infisical → REST API, como ya especifica §7.1. **No implementar** `user_id` en `audit_log`/`pending_approvals`, aislamiento de memory por usuario, ni enrutamiento HITL multi-persona — si en el futuro se reconsidera, requiere un ADR nuevo porque cambia el modelo de seguridad completo del proyecto.
 - **2026-07-23 — Prerequisitos de Fase 3.1 (sanitizer + model-provider): los construye Claude Code, no Antigravity.** El plan de Antigravity para Canvas proponía construir `src/security/injection-sanitizer.ts` y `src/model-provider/**` dentro de su propia rama — ambos son área exclusiva de Claude Code por `WORKFLOW.md` §2.2 (infraestructura compartida que futuras integraciones como Gmail/Telegram también necesitarán). El owner confirmó que Claude Code los construyera aparte primero; Antigravity los consume una vez mergeados. Ver PR #3 de Yormun_Core y ADR 0004.
 - **2026-07-23 — Después de Fase 3.1, siguiente prioridad: terminar Fase 2.4 (bot de Telegram), no Fase 4.x.** La Tarea A de Fase 2.4 (`model-provider`) ya quedó hecha de rebote en PR #3. Queda solo la Tarea B (`src/telegram/`, grammY). El owner la priorizó sobre Budget guard (4.1)/Google Calendar (4.2)/Memoria (4.3) porque el sistema HITL ya construido no tiene todavía ningún canal real de notificación/aprobación.
+- **2026-07-24 — Fase 4.1: alertas de budget/kill switch van directo a Telegram, no vía Alertmanager.** BLUEPRINT 9.6/10.4 especifica "Alertmanager → Telegram", pero Alertmanager nunca se desplegó (Fase 1 observability quedó explícitamente mínima: Prometheus + Loki + Grafana). Desplegarlo ahora era trabajo de infra fuera de alcance de Fase 4.1. Se decidió notificar directo desde `Yormun_Core` al bot ya construido (Fase 2.4) — mismo destino final, sin la dependencia de infra nueva. Documentado en el plan de la fase, no requirió pausar para preguntar.
+- **2026-07-24 — Fase 4.1: `sessionId` opcional en `BudgetGuardedModelRouter`, no una abstracción de sesión persistente.** El código no tenía ningún concepto de "sesión" (ningún caller pasaba un ID). Se agregó un `sessionId` opcional — si no se pasa, cada llamada es su propia sesión (UUID nuevo). Telegram usa un `sessionId` fijo por chat (conversación libre comparte presupuesto); Canvas/shadowing no pasa ninguno (cada corrida nocturna es una sola llamada). Evita inventar una abstracción de sesión persistente que nada más en el sistema necesita todavía.
 
 ## Plan aprobado
 
@@ -128,13 +131,16 @@ Los `"name": "temp-*"` de `package.json` en Web y CLI ya no aplican como pendien
 3. **Fase 2.1** [rol Antigravity, ejecuta Claude Code] — ✅ hecho, PR #1 en los 4 repos de app.
 4. **Fase 2.2** [Claude Code] — ✅ hecho, PR #2 Yormun_Core (HITL classifier + audit log). CI verde.
 5. **Fase 2.3** [Claude Code] — ✅ hecho, PR #2 Yormun_Executor (RBAC + ejecución aislada). CI verde, mergeado.
+6. **Fase 3.1** [Antigravity] — ✅ hecho, PR #4 Yormun_Core (Canvas LMS + Shadowing Académico). Prerequisitos (`security`/`model-provider`) en PR #3, Claude Code.
+7. **Fase 2.4** [Antigravity] — ✅ hecho, PR #5 Yormun_Core (bot de Telegram).
+8. **Fase 4.1** [Claude Code] — ✅ hecho, PR #6 Yormun_Core (Budget guard + kill switch).
 
-**Fin de la Fase 2 del roadmap.** Los 8 PRs de las Fases 1-2 están revisados y mergeados a `main` en los 6 repos. Lo que sigue (BLUEPRINT §14) es la Fase 3 (Canvas LMS + Shadowing Académico, lidera Antigravity) — no arrancada.
+**Fin de la Fase 2, Fase 3.1 y Fase 4.1 del roadmap.** Pendientes: Fase 4.2 (Google Calendar + Gmail, Antigravity — desbloquea `canvasScheduleStudyBlock`) y Fase 4.3 (Memoria sqlite-vec, Claude Code).
 
 ## Bloqueados / esperando
 
 - Ejecución real del bootstrap en la VM OCI la hace el owner (Claude Code solo escribe manifests/scripts).
-- Decisión del owner sobre si arrancar Fase 3 ahora (asumiendo Claude Code también el rol de Antigravity, como en Fases 1.1/2.1) o esperar a que Antigravity esté disponible.
+- Decisión del owner sobre por dónde seguir: Fase 4.2 (Google Calendar + Gmail, Antigravity) o Fase 4.3 (Memoria sqlite-vec, Claude Code).
 
 ## Fase 2.3 (follow-up) — RBAC de NetworkPolicy en Yormun_Infra (PR #4)
 
@@ -178,6 +184,7 @@ También corregido de paso: glob patterns rotos en `lint`/`format`, y `package.j
 
 ## Recientemente completado (últimos 7 días)
 
+- 2026-07-24: [Yormun_Core] [PR #6](https://github.com/JFrnck/Yormun_Core/pull/6) mergeado — Fase 4.1 completa: `src/budget/` (tracking sesión/día, degradación al 80% vía el hint `budgetRemaining` de Fase 3.1, kill switch de runaway persistido en Postgres), métricas Prometheus, `BudgetGuardedModelRouter` ya inyectado en Canvas y Telegram, `/budget` con datos reales y `/unpause` nuevo en el bot. 87 tests nuevos (unitarios + integración Postgres real), CI verde, verificado con `tsc --noEmit -p tsconfig.json` de forma independiente antes de mergear.
 - 2026-07-24: [Yormun_Core] [PR #5](https://github.com/JFrnck/Yormun_Core/pull/5) mergeado — Fase 2.4 completa: bot de Telegram con grammY en modo webhook, auth estricta con `TELEGRAM_OWNER_CHAT_ID` numérico, `TELEGRAM_WEBHOOK_SECRET` requerida fail-fast validando el header de Telegram, `bot.init()` real, comandos `/start`/`/status`/`/tasks`/`/approve`/`/reject`/`/budget` (stub honesto), integración con `DualConfirmService`/`AuditService`/`ModelRouterService`. 3 rondas de review contra el código real (bug de tipos chat_id, gap de seguridad del webhook, `botInfo` hardcodeado, tipos en specs invisibles a `pnpm build`), todas resueltas y verificadas independientemente antes de mergear. 105 tests en verde.
 - 2026-07-23: [Yormun_Core] [PR #4](https://github.com/JFrnck/Yormun_Core/pull/4) mergeado — Fase 3.1 completada por Antigravity (integración Canvas LMS, cliente REST con rate limit de 30 req/min, handlers sanitizados con `wrapUntrustedContent`, ShadowingService nocturno consumiendo `ModelRouterService.complete('long_context', ...)` con Gemini 3.1 Pro, `CalendarNotImplementedError` 501). 95 tests en verde. Claude Code verificó de forma independiente (lint/test/build/typecheck a mano, no solo el self-report) antes de mergear — sin hallazgos nuevos.
 - 2026-07-23: [Yormun_Core] PR #3 mergeado — prerequisitos de Fase 3.1: `src/security/injection-sanitizer.ts` (ADR 0004) + `src/model-provider/**` (router, failover, providers Anthropic/Google, config/models.yaml) + declaración de las 3 tools de Canvas en `registry.ts`. 87 tests, cobertura 97% en los módulos nuevos. Fix incidental de CI (env vars faltantes). Antigravity desbloqueado para retomar `integrations/canvas/**`.
